@@ -22,7 +22,7 @@ class VintedRequestSettings:
 class VintedRequest:
     def __init__(self):
         self._session = requests.Session()
-        self.session.headers.update(VintedRequestSettings.HEADERS)
+        self._session.headers.update(VintedRequestSettings.HEADERS)
         self.obtain_cookies_from_file()
 
     def obtain_cookies_from_file(
@@ -60,14 +60,14 @@ class VintedRequest:
         while tries < VintedRequestSettings.MAX_TRIES:
             tries += 1
 
-            with self.sesion.get(url) as response:
+            with self._session.get(url) as response:
                 if response.status_code == 401:
                     self.refresh_token()
                 elif response.status_code == 200:
                     return response
                 else:
                     raise HTTPError(
-                            "Status code {response.status_code}"
+                            "Status code {}".format(response.status_code)
                         )
 
     def post(self, url):
@@ -76,18 +76,17 @@ class VintedRequest:
         Keyword arguments:
         url -- url to send the request to
         """
-        response = self.session.post(url)
+        response = self._session.post(url)
         response.raise_for_status()
         return response
 
     def refresh_token(self):
         """Refreshes the token"""
-        self.session.cookies.clear_session_cookies()
+        self._session.cookies.clear_session_cookies()
 
         try:
             self.post(VintedRequestSettings.AUTH_URL)
         except HTTPError as e:
-            print("Error while refreshing the token: " + e)
-            return
+            print("Error while refreshing the token: {}".format(e))
 
         self.save_cookies_to_file()
