@@ -16,6 +16,7 @@ class VintedRequestSettings:
     }
     AUTH_URL = f"https://{VINTED_URL}/auth/token_refresh"
     COOKIES_FILE = "cookies.pkl"
+    MAX_TRIES = 3
 
 
 class VintedRequest:
@@ -55,15 +56,19 @@ class VintedRequest:
         Keyword arguments:
         url -- url to send the request to
         """
-        with self.sesion.get(url) as response:
-            if response.status_code == 401:
-                self.refresh_token()
-            elif response.status_code == 200:
-                return response
-            else:
-                raise HTTPError(
-                        "Status code {response.status_code}"
-                    )
+        tries = 1
+        while tries < VintedRequestSettings.MAX_TRIES:
+            tries += 1
+
+            with self.sesion.get(url) as response:
+                if response.status_code == 401:
+                    self.refresh_token()
+                elif response.status_code == 200:
+                    return response
+                else:
+                    raise HTTPError(
+                            "Status code {response.status_code}"
+                        )
 
     def post(self, url):
         """Sends a POST request
@@ -72,10 +77,7 @@ class VintedRequest:
         url -- url to send the request to
         """
         response = self.session.post(url)
-
-        if response.status_code == 401:
-            raise HTTPError()
-
+        response.raise_for_status()
         return response
 
     def refresh_token(self):
@@ -84,7 +86,8 @@ class VintedRequest:
 
         try:
             self.post(VintedRequestSettings.AUTH_URL)
-        except HTTPError:
-            raise HTTPError("Token refresh failed")
+        except HTTPError as e:
+            print("Error while refreshing the token: " + e)
+            return
 
         self.save_cookies_to_file()
