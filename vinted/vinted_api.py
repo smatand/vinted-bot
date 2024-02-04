@@ -47,7 +47,7 @@ class VintedApi:
         # predefine session with headers and cookies
         self._request = VintedRequest()
 
-    def search_url(self, url):
+    def search_url(self, url, per_page=16):
         """Retrieve items from a given url.
 
         Keyword arguments:
@@ -56,8 +56,7 @@ class VintedApi:
         Returns:
         list -- a list of items or None
         """
-        url = self.parse_url(url)
-        print(url)
+        url = self.parse_url(url, per_page=per_page)
         try:
             with self._request.get(url) as response:
                 return self.process_dataframe(response.json())
@@ -98,8 +97,7 @@ class VintedApi:
         Returns:
         url with parameters of search
         """
-        api_url = f"{VintedApiSettings.API_URL}/catalog/items?page={page}"
-        f"&per_page={per_page}"
+        api_url = f"{VintedApiSettings.API_URL}/catalog/items?page={page}&per_page={per_page}"
 
         for param in VintedApiSettings.FILTER_PARAMS:
             api_url += VintedApi.add_filter_param_to_url(url, param)
